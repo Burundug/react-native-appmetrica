@@ -28,7 +28,7 @@
   "license": "MIT",
   "homepage": "https://appmetrica.yandex.com/docs",
   "peerDependencies": {
-    "react-native": ">=0.70.0 <1.0.x"
+    "react-native": ">=0.60.0"
   },
   "devDependencies": {
   }
