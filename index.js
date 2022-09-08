@@ -74,8 +74,8 @@ export default {
     AppMetrica.beginCheckout(params);
   },
 
-  finishCheckout(params: Object) {
-    AppMetrica.finishCheckout(params)
+  finishCheckout(params: Object, number: number) {
+    AppMetrica.finishCheckout(params,number)
   },
 
   showScreen(params: Object) {
