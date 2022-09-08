@@ -58,6 +58,29 @@ export default {
     return AppMetrica.getLibraryApiLevel();
   },
 
+  showProductCard(params: Object) {
+    AppMetrica.showProductCard(params);
+  },
+
+  addToCart(params: Object) {
+    AppMetrica.addToCart(params);
+  },
+
+  removeFromCart(params: Object) {
+    AppMetrica.removeFromCart(params);
+  },
+
+  beginCheckout(params: Object) {
+    AppMetrica.beginCheckout(params);
+  },
+
+  finishCheckout(params: Object) {
+    AppMetrica.finishCheckout(params)
+  },
+
+  showScreen(params: Object) {
+    AppMetrica.showScreen(params);
+  },
   async getLibraryVersion(): string {
     return AppMetrica.getLibraryVersion();
   },
