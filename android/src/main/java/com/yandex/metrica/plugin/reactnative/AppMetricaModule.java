@@ -1,6 +1,6 @@
 /*
  * Version for React Native
- * © 2020 YANDEX
+ * © 2025 NCode
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * https://yandex.com/legal/appmetrica_sdk_agreement/
@@ -18,23 +18,17 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableArray;
-import com.yandex.metrica.YandexMetrica;
-import com.yandex.metrica.ecommerce.ECommerceAmount;
-import com.yandex.metrica.ecommerce.ECommerceCartItem;
-import com.yandex.metrica.ecommerce.ECommerceEvent;
-import com.yandex.metrica.ecommerce.ECommerceOrder;
-import com.yandex.metrica.ecommerce.ECommercePrice;
-import com.yandex.metrica.ecommerce.ECommerceProduct;
-import com.yandex.metrica.ecommerce.ECommerceReferrer;
-import com.yandex.metrica.ecommerce.ECommerceScreen;
-import androidx.annotation.LongDef;
+import io.appmetrica.analytics.AppMetrica;
+import io.appmetrica.analytics.ecommerce.ECommerceAmount;
+import io.appmetrica.analytics.ecommerce.ECommerceCartItem;
+import io.appmetrica.analytics.ecommerce.ECommerceEvent;
+import io.appmetrica.analytics.ecommerce.ECommerceOrder;
+import io.appmetrica.analytics.ecommerce.ECommercePrice;
+import io.appmetrica.analytics.ecommerce.ECommerceProduct;
+import io.appmetrica.analytics.ecommerce.ECommerceReferrer;
+import io.appmetrica.analytics.ecommerce.ECommerceScreen;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.lang.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class AppMetricaModule extends ReactContextBaseJavaModule {
 
@@ -54,14 +48,14 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void activate(ReadableMap configMap) {
-        YandexMetrica.activate(reactContext, Utils.toYandexMetricaConfig(configMap));
+        AppMetrica.activate(reactContext, Utils.toYandexMetricaConfig(configMap));
         enableActivityAutoTracking();
     }
 
     private void enableActivityAutoTracking() {
         Activity activity = getCurrentActivity();
         if (activity != null) { // TODO: check
-            YandexMetrica.enableActivityAutoTracking(activity.getApplication());
+            AppMetrica.enableActivityAutoTracking(activity.getApplication());
         } else {
             Log.w(TAG, "Activity is not attached");
         }
@@ -69,22 +63,22 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void getLibraryApiLevel(Promise promise) {
-        promise.resolve(YandexMetrica.getLibraryApiLevel());
+        promise.resolve(AppMetrica.getLibraryApiLevel());
     }
 
     @ReactMethod
     public void getLibraryVersion(Promise promise) {
-        promise.resolve(YandexMetrica.getLibraryVersion());
+        promise.resolve(AppMetrica.getLibraryVersion());
     }
 
     @ReactMethod
     public void pauseSession() {
-        YandexMetrica.pauseSession(getCurrentActivity());
+        AppMetrica.pauseSession(getCurrentActivity());
     }
 
     @ReactMethod
     public void reportAppOpen(String deeplink) {
-        YandexMetrica.reportAppOpen(deeplink);
+        AppMetrica.reportAppOpen(deeplink);
     }
 
     @ReactMethod
@@ -92,57 +86,57 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
         try {
             Integer.valueOf("00xffWr0ng");
         } catch (Throwable error) {
-            YandexMetrica.reportError(message, error);
+            AppMetrica.reportError(message, error);
         }
     }
 
     @ReactMethod
     public void reportEvent(String eventName, ReadableMap attributes) {
         if (attributes == null) {
-            YandexMetrica.reportEvent(eventName);
+            AppMetrica.reportEvent(eventName);
         } else {
-            YandexMetrica.reportEvent(eventName, attributes.toHashMap());
+            AppMetrica.reportEvent(eventName, attributes.toHashMap());
         }
     }
 
     @ReactMethod
     public void reportReferralUrl(String referralUrl) {
-        YandexMetrica.reportReferralUrl(referralUrl);
+        AppMetrica.reportReferralUrl(referralUrl);
     }
 
     @ReactMethod
     public void requestAppMetricaDeviceID(Callback listener) {
-        YandexMetrica.requestAppMetricaDeviceID(new ReactNativeAppMetricaDeviceIDListener(listener));
+        AppMetrica.getDeviceId(this.reactContext);
     }
 
     @ReactMethod
     public void resumeSession() {
-        YandexMetrica.resumeSession(getCurrentActivity());
+        AppMetrica.resumeSession(getCurrentActivity());
     }
 
     @ReactMethod
     public void sendEventsBuffer() {
-        YandexMetrica.sendEventsBuffer();
+        AppMetrica.sendEventsBuffer();
     }
 
     @ReactMethod
     public void setLocation(ReadableMap locationMap) {
-        YandexMetrica.setLocation(Utils.toLocation(locationMap));
+        AppMetrica.setLocation(Utils.toLocation(locationMap));
     }
 
     @ReactMethod
     public void setLocationTracking(boolean enabled) {
-        YandexMetrica.setLocationTracking(enabled);
+        AppMetrica.setLocationTracking(enabled);
     }
 
     @ReactMethod
     public void setStatisticsSending(boolean enabled) {
-        YandexMetrica.setStatisticsSending(reactContext, enabled);
+            return;
     }
 
     @ReactMethod
     public void setUserProfileID(String userProfileID) {
-        YandexMetrica.setUserProfileID(userProfileID);
+        AppMetrica.setUserProfileID(userProfileID);
     }
 
       public ECommerceScreen createScreen(ReadableMap params) {
@@ -169,7 +163,7 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
          public void showScreen(ReadableMap params, Promise promise) {
              ECommerceScreen screen = this.createScreen(params);
              ECommerceEvent showScreenEvent = ECommerceEvent.showScreenEvent(screen);
-             YandexMetrica.reportECommerce(showScreenEvent);
+             AppMetrica.reportECommerce(showScreenEvent);
                  promise.resolve("OK");
          }
 
@@ -178,21 +172,21 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
              ECommerceScreen screen = this.createScreen(params);
              ECommerceProduct product = this.createProduct(params);
              ECommerceEvent showProductCardEvent = ECommerceEvent.showProductCardEvent(product, screen);
-             YandexMetrica.reportECommerce(showProductCardEvent);
+             AppMetrica.reportECommerce(showProductCardEvent);
          }
 
          @ReactMethod
          public void addToCart(ReadableMap params) {
              ECommerceCartItem cartItem = this.createCartItem(params);
              ECommerceEvent addCartItemEvent = ECommerceEvent.addCartItemEvent(cartItem);
-             YandexMetrica.reportECommerce(addCartItemEvent);
+             AppMetrica.reportECommerce(addCartItemEvent);
          }
 
          @ReactMethod
          public void removeFromCart(ReadableMap params) {
              ECommerceCartItem cartItem = this.createCartItem(params);
              ECommerceEvent removeCartItemEvent = ECommerceEvent.removeCartItemEvent(cartItem);
-             YandexMetrica.reportECommerce(removeCartItemEvent);
+             AppMetrica.reportECommerce(removeCartItemEvent);
          }
 
          @ReactMethod
@@ -204,7 +198,7 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
              }
              ECommerceOrder order = new ECommerceOrder(identifier, cartItems);
              ECommerceEvent beginCheckoutEvent = ECommerceEvent.beginCheckoutEvent(order);
-             YandexMetrica.reportECommerce(beginCheckoutEvent);
+             AppMetrica.reportECommerce(beginCheckoutEvent);
          }
 
          @ReactMethod
@@ -216,6 +210,6 @@ public class AppMetricaModule extends ReactContextBaseJavaModule {
              }
              ECommerceOrder order = new ECommerceOrder(identifier, cartItems);
              ECommerceEvent purchaseEvent = ECommerceEvent.purchaseEvent(order);
-             YandexMetrica.reportECommerce(purchaseEvent);
+             AppMetrica.reportECommerce(purchaseEvent);
          }
 }

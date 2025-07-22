@@ -1,6 +1,6 @@
 /*
  * Version for React Native
- * © 2020 YANDEX
+ * © 2025 NCode
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * https://yandex.com/legal/appmetrica_sdk_agreement/
@@ -21,7 +21,7 @@ import com.facebook.react.bridge.JavaScriptModule;
 public class AppMetricaPackage implements ReactPackage {
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        return Arrays.<NativeModule>asList(new AppMetricaModule(reactContext));
+        return List.<NativeModule>of(new AppMetricaModule(reactContext));
     }
 
     @Override
