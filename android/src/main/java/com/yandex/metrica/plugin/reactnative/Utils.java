@@ -14,7 +14,6 @@ import com.facebook.react.bridge.ReadableMap;
 import io.appmetrica.analytics.AppMetricaConfig;
 import io.appmetrica.analytics.PreloadInfo;
 
-import java.util.Iterator;
 import java.util.Map;
 
 abstract class Utils {
