@@ -8,6 +8,7 @@
 
 #import "AppMetrica.h"
 #import "AppMetricaUtils.h"
+#import <AppMetricaCrashes/AppMetricaCrashes.h>
 
 static NSString *const kYMMReactNativeExceptionName = @"ReactNativeException";
 
@@ -19,7 +20,7 @@ RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(activate:(NSDictionary *)configDict)
 {
-    [YMMYandexMetrica activateWithConfiguration:[AppMetricaUtils configurationForDictionary:configDict]];
+    [AMAAppMetrica activateWithConfiguration:[AppMetricaUtils configurationForDictionary:configDict]];
 }
 
 RCT_EXPORT_METHOD(getLibraryApiLevel)
@@ -29,32 +30,40 @@ RCT_EXPORT_METHOD(getLibraryApiLevel)
 
 RCT_EXPORT_METHOD(getLibraryVersion:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
-    resolve([YMMYandexMetrica libraryVersion]);
+    resolve([AMAAppMetrica libraryVersion]);
 }
 
 RCT_EXPORT_METHOD(pauseSession)
 {
-    [YMMYandexMetrica pauseSession];
+    [AMAAppMetrica pauseSession];
 }
 
 RCT_EXPORT_METHOD(reportAppOpen:(NSString *)deeplink)
 {
-    [YMMYandexMetrica handleOpenURL:[NSURL URLWithString:deeplink]];
+    [AMAAppMetrica trackOpeningURL:[NSURL URLWithString:deeplink]];
+
 }
 
 RCT_EXPORT_METHOD(reportError:(NSString *)message) {
     NSException *exception = [[NSException alloc] initWithName:message reason:nil userInfo:nil];
-    [YMMYandexMetrica reportError:message exception:exception onFailure:NULL];
+    AMAError *underlyingError = [AMAError errorWithIdentifier:@"Underlying AMAError"];
+    AMAError *error = [AMAError errorWithIdentifier:@"error"
+                                            message:message
+                                         parameters:@{ @"foo": @"bar" }
+                                          backtrace:NSThread.callStackReturnAddresses
+                                    underlyingError:underlyingError];
+    [[AMAAppMetricaCrashes crashes] reportError:error  onFailure:nil];
+
 }
 
 RCT_EXPORT_METHOD(reportEvent:(NSString *)eventName:(NSDictionary *)attributes)
 {
     if (attributes == nil) {
-        [YMMYandexMetrica reportEvent:eventName onFailure:^(NSError *error) {
+        [AMAAppMetrica reportEvent:eventName onFailure:^(NSError *error) {
             NSLog(@"error: %@", [error localizedDescription]);
         }];
     } else {
-        [YMMYandexMetrica reportEvent:eventName parameters:attributes onFailure:^(NSError *error) {
+        [AMAAppMetrica reportEvent:eventName parameters:attributes onFailure:^(NSError *error) {
             NSLog(@"error: %@", [error localizedDescription]);
         }];
     }
@@ -62,30 +71,40 @@ RCT_EXPORT_METHOD(reportEvent:(NSString *)eventName:(NSDictionary *)attributes)
 
 RCT_EXPORT_METHOD(reportReferralUrl:(NSString *)referralUrl)
 {
-    [YMMYandexMetrica reportReferralUrl:[NSURL URLWithString:referralUrl]];
+   
 }
 
 RCT_EXPORT_METHOD(requestAppMetricaDeviceID:(RCTResponseSenderBlock)listener)
 {
-    YMMAppMetricaDeviceIDRetrievingBlock completionBlock = ^(NSString *_Nullable appMetricaDeviceID, NSError *_Nullable error) {
-        listener(@[[self wrap:appMetricaDeviceID], [self wrap:[AppMetricaUtils stringFromRequestDeviceIDError:error]]]);
-    };
-    [YMMYandexMetrica requestAppMetricaDeviceIDWithCompletionQueue:nil completionBlock:completionBlock];
+  NSArray *keys = @[ @"appmetrica_device_id" ];
+  
+  [AMAAppMetrica requestStartupIdentifiersWithKeys:keys
+                                   completionQueue:dispatch_get_main_queue()
+                                   completionBlock:^(NSDictionary * _Nullable result, NSError * _Nullable error) {
+    NSString *deviceID = result[@"appmetrica_device_id"];
+    NSString *errorString = [AppMetricaUtils stringFromRequestDeviceIDError:error];
+    
+    listener(@[
+      deviceID ? deviceID : [NSNull null],
+      errorString ? errorString : [NSNull null]
+    ]);
+  }];
 }
 
 RCT_EXPORT_METHOD(resumeSession)
 {
-    [YMMYandexMetrica resumeSession];
+    [AMAAppMetrica resumeSession];
 }
 
 RCT_EXPORT_METHOD(sendEventsBuffer)
 {
-    [YMMYandexMetrica sendEventsBuffer];
+    [AMAAppMetrica sendEventsBuffer];
 }
 
 RCT_EXPORT_METHOD(setLocation:(NSDictionary *)locationDict)
 {
-    [YMMYandexMetrica setLocation:[AppMetricaUtils locationForDictionary:locationDict]];
+    CLLocation *location = [[self class] locationForDictionary:locationDict];
+    AMAAppMetrica.customLocation = location;
 }
 
 RCT_EXPORT_METHOD(beginCheckout:(NSArray<NSDictionary *> *)products identifier:(NSString *)identifier) {
@@ -94,45 +113,45 @@ RCT_EXPORT_METHOD(beginCheckout:(NSArray<NSDictionary *> *)products identifier:(
         [cartItems addObject:[self createCartItem:products[i]]];
      }
 
-     YMMECommerceOrder *order = [[YMMECommerceOrder alloc] initWithIdentifier:identifier
+    AMAECommerceOrder *order = [[AMAECommerceOrder alloc] initWithIdentifier:identifier
                                                                     cartItems:cartItems
                                                                       payload:@{}];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce beginCheckoutEventWithOrder:order] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce beginCheckoutEventWithOrder:order] onFailure:nil];
  }
 
-- (YMMECommerceScreen *)createScreen:(NSDictionary *)screen {
-    YMMECommerceScreen *screenObj = [[YMMECommerceScreen alloc] initWithName:screen[@"screenName"] categoryComponents:@[] searchQuery:screen[@"searchQuery"] payload:@{}];
+- (AMAECommerceScreen *)createScreen:(NSDictionary *)screen {
+    AMAECommerceScreen *screenObj = [[AMAECommerceScreen alloc] initWithName:screen[@"screenName"] categoryComponents:@[] searchQuery:screen[@"searchQuery"] payload:@{}];
     return screenObj;
 }
 
-- (YMMECommerceProduct *)createProduct:(NSDictionary *)product {
-    YMMECommerceAmount *actualFiat = [[YMMECommerceAmount alloc] initWithUnit:product[@"currency"] value:[NSDecimalNumber decimalNumberWithString:product[@"price"]]];
-   YMMECommercePrice *actualPrice = [[YMMECommercePrice alloc] initWithFiat:actualFiat internalComponents:@[]];
-    YMMECommerceProduct *productObj = [[YMMECommerceProduct alloc] initWithSKU:product[@"sku"] name:product[@"name"] categoryComponents:@[] payload:@{} actualPrice:actualPrice originalPrice:actualPrice promoCodes:@[]];
+- (AMAECommerceProduct *)createProduct:(NSDictionary *)product {
+    AMAECommerceAmount *actualFiat = [[AMAECommerceAmount alloc] initWithUnit:product[@"currency"] value:[NSDecimalNumber decimalNumberWithString:product[@"price"]]];
+    AMAECommercePrice *actualPrice = [[AMAECommercePrice alloc] initWithFiat:actualFiat internalComponents:@[]];
+    AMAECommerceProduct *productObj = [[AMAECommerceProduct alloc] initWithSKU:product[@"sku"] name:product[@"name"] categoryComponents:@[] payload:@{} actualPrice:actualPrice originalPrice:actualPrice promoCodes:@[]];
 
     return productObj;
 }
 
-- (YMMECommercePrice *)createPrice:(NSDictionary *)product {
-    YMMECommerceAmount *priceObj = [[YMMECommerceAmount alloc] initWithUnit:product[@"currency"] value:[NSDecimalNumber decimalNumberWithString:product[@"price"]]];
-    YMMECommercePrice *actualPrice = [[YMMECommercePrice alloc] initWithFiat:priceObj internalComponents:@[]];
+- (AMAECommercePrice *)createPrice:(NSDictionary *)product {
+    AMAECommerceAmount *priceObj = [[AMAECommerceAmount alloc] initWithUnit:product[@"currency"] value:[NSDecimalNumber decimalNumberWithString:product[@"price"]]];
+    AMAECommercePrice *actualPrice = [[AMAECommercePrice alloc] initWithFiat:priceObj internalComponents:@[]];
 
     return actualPrice;
 }
 
-- (YMMECommerceCartItem *)createCartItem:(NSDictionary *)product {
-    YMMECommerceScreen *screen = [self createScreen:@{}];
+- (AMAECommerceCartItem *)createCartItem:(NSDictionary *)product {
+    AMAECommerceScreen *screen = [self createScreen:@{}];
 
-    YMMECommerceProduct *productObj = [self createProduct:product];
+    AMAECommerceProduct *productObj = [self createProduct:product];
 
-     YMMECommerceReferrer *referrer = [[YMMECommerceReferrer alloc] initWithType:@"" identifier:@"" screen:screen];
+    AMAECommerceReferrer *referrer = [[AMAECommerceReferrer alloc] initWithType:@"" identifier:@"" screen:screen];
 
     NSDecimalNumber *quantity = [NSDecimalNumber decimalNumberWithString:product[@"quantity"]];
 
-    YMMECommercePrice *actualPrice = [self createPrice:product];
+    AMAECommercePrice *actualPrice = [self createPrice:product];
 
-    YMMECommerceCartItem *cartItem = [[YMMECommerceCartItem alloc]  initWithProduct:productObj quantity:quantity revenue:actualPrice referrer:referrer];
+    AMAECommerceCartItem *cartItem = [[AMAECommerceCartItem alloc]  initWithProduct:productObj quantity:quantity revenue:actualPrice referrer:referrer];
 
     return cartItem;
 }
@@ -142,51 +161,51 @@ RCT_EXPORT_METHOD(beginCheckout:(NSArray<NSDictionary *> *)products identifier:(
      for(int i=0; i< products.count; i++){
         [cartItems addObject:[self createCartItem:products[i]]];
      }
-     YMMECommerceOrder *order = [[YMMECommerceOrder alloc] initWithIdentifier:identifier
+     AMAECommerceOrder *order = [[AMAECommerceOrder alloc] initWithIdentifier:identifier
                                                                     cartItems:cartItems
                                                                       payload:@{}];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce purchaseEventWithOrder:order] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce purchaseEventWithOrder:order] onFailure:nil];
  }
 
 RCT_EXPORT_METHOD(addToCart:(NSDictionary *)product) {
-     YMMECommerceCartItem *cartItem = [self createCartItem:product];
+    AMAECommerceCartItem *cartItem = [self createCartItem:product];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce addCartItemEventWithItem:cartItem] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce addCartItemEventWithItem:cartItem] onFailure:nil];
  }
 
  RCT_EXPORT_METHOD(removeFromCart:(NSDictionary *)product) {
-     YMMECommerceCartItem *cartItem = [self createCartItem:product];
+     AMAECommerceCartItem *cartItem = [self createCartItem:product];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce removeCartItemEventWithItem:cartItem] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce removeCartItemEventWithItem:cartItem] onFailure:nil];
  }
 
 RCT_EXPORT_METHOD(showScreen:(NSDictionary *)screen) {
-     YMMECommerceScreen *screenObj = [self createScreen:screen];
+    AMAECommerceScreen *screenObj = [self createScreen:screen];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce showScreenEventWithScreen:screenObj] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce showScreenEventWithScreen:screenObj] onFailure:nil];
  }
 
 RCT_EXPORT_METHOD(showProductCard:(NSDictionary *)product ) {
-     YMMECommerceScreen *screen = [self createScreen:@{}];
-     YMMECommerceProduct *productObj = [self createProduct:product];
+    AMAECommerceScreen *screen = [self createScreen:@{}];
+    AMAECommerceProduct *productObj = [self createProduct:product];
 
-     [YMMYandexMetrica reportECommerce:[YMMECommerce showProductCardEventWithProduct:productObj screen:screen] onFailure:nil];
+     [AMAAppMetrica reportECommerce:[AMAECommerce showProductCardEventWithProduct:productObj screen:screen] onFailure:nil];
  }
 
 RCT_EXPORT_METHOD(setLocationTracking:(BOOL)enabled)
 {
-    [YMMYandexMetrica setLocationTracking:enabled];
+    AMAAppMetrica.locationTrackingEnabled = enabled;
 }
 
 RCT_EXPORT_METHOD(setStatisticsSending:(BOOL)enabled)
 {
-    [YMMYandexMetrica setStatisticsSending:enabled];
+    [AMAAppMetrica setDataSendingEnabled:enabled];
 }
 
 RCT_EXPORT_METHOD(setUserProfileID:(NSString *)userProfileID)
 {
-    [YMMYandexMetrica setUserProfileID:userProfileID];
+    [AMAAppMetrica setUserProfileID:userProfileID];
 }
 
 - (NSObject *)wrap:(NSObject *)value

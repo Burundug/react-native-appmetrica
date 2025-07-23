@@ -7,11 +7,11 @@
  */
 
 #import <CoreLocation/CoreLocation.h>
-#import <YandexMobileMetrica/YandexMobileMetrica.h>
+#import <AppMetricaCore/AppMetricaCore.h>
 
 @interface AppMetricaUtils : NSObject
 
-+ (YMMYandexMetricaConfiguration *)configurationForDictionary:(NSDictionary *)configDict;
++ (AMAAppMetricaConfiguration *)configurationForDictionary:(NSDictionary *)configDict;
 + (CLLocation *)locationForDictionary:(NSDictionary *)locationDict;
 + (NSString *)stringFromRequestDeviceIDError:(NSError *)error;
 

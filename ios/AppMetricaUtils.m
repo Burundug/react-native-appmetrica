@@ -10,16 +10,13 @@
 
 @implementation AppMetricaUtils
 
-+ (YMMYandexMetricaConfiguration *)configurationForDictionary:(NSDictionary *)configDict
++ (AMAAppMetricaConfiguration *)configurationForDictionary:(NSDictionary *)configDict
 {
     NSString *apiKey = configDict[@"apiKey"];
-    YMMYandexMetricaConfiguration *configuration = [[YMMYandexMetricaConfiguration alloc] initWithApiKey:apiKey];
+    AMAAppMetricaConfiguration *configuration = [[AMAAppMetricaConfiguration alloc] initWithAPIKey:apiKey];
 
     if (configDict[@"appVersion"] != nil) {
         configuration.appVersion = configDict[@"appVersion"];
-    }
-    if (configDict[@"crashReporting"] != nil) {
-        configuration.crashReporting = [configDict[@"crashReporting"] boolValue];
     }
     if (configDict[@"activationAsSessionStart"] != nil) {
         configuration.handleActivationAsSessionStart = [configDict[@"activationAsSessionStart"] boolValue];
@@ -27,14 +24,8 @@
     if (configDict[@"firstActivationAsUpdate"] != nil) {
         configuration.handleFirstActivationAsUpdate = [configDict[@"firstActivationAsUpdate"] boolValue];
     }
-    if (configDict[@"location"] != nil) {
-        configuration.location = [self locationForDictionary:configDict[@"location"]];
-    }
     if (configDict[@"locationTracking"] != nil) {
         configuration.locationTracking = [configDict[@"locationTracking"] boolValue];
-    }
-    if (configDict[@"logs"] != nil) {
-        configuration.logs = [configDict[@"logs"] boolValue];
     }
     if (configDict[@"preloadInfo"] != nil) {
         configuration.preloadInfo = [[self class] preloadInfoForDictionary:configDict[@"preloadInfo"]];
@@ -44,9 +35,6 @@
     }
     if (configDict[@"sessionTimeout"] != nil) {
         configuration.sessionTimeout = [configDict[@"sessionTimeout"] unsignedIntegerValue];
-    }
-    if (configDict[@"statisticsSending"] != nil) {
-        configuration.statisticsSending = [configDict[@"statisticsSending"] boolValue];
     }
 
     return configuration;
@@ -80,14 +68,14 @@
     return location;
 }
 
-+ (YMMYandexMetricaPreloadInfo *)preloadInfoForDictionary:(NSDictionary *)preloadInfoDict
++ (AMAAppMetricaPreloadInfo *)preloadInfoForDictionary:(NSDictionary *)preloadInfoDict
 {
     if (preloadInfoDict == nil) {
         return nil;
     }
 
     NSString *trackingId = preloadInfoDict[@"trackingId"];
-    YMMYandexMetricaPreloadInfo *preloadInfo = [[YMMYandexMetricaPreloadInfo alloc] initWithTrackingIdentifier:trackingId];
+    AMAAppMetricaPreloadInfo *preloadInfo = [[AMAAppMetricaPreloadInfo alloc] initWithTrackingIdentifier:trackingId];
 
     NSDictionary *additionalInfo = preloadInfoDict[@"additionalInfo"];
     if (additionalInfo != nil) {
