@@ -16,5 +16,5 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React"
-  s.dependency 'YandexMobileMetrica/Dynamic', '4.2.0'
+  s.dependency 'AppMetricaAnalytics', '5.0.0'
 end
